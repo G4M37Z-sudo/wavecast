@@ -153,10 +153,10 @@ input { font-family: inherit; font-size: inherit; }
 }
 
 .page-sender {
-  padding: var(--space-5);
-  display: grid;
-  grid-template-columns: minmax(360px, 420px) 1fr;
-  gap: var(--space-5);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
@@ -165,21 +165,15 @@ input { font-family: inherit; font-size: inherit; }
 }
 
 .page-receiver {
-  padding: var(--space-5);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   flex: 1;
   min-height: 0;
-}
-
-@media (max-width: 800px) {
-  .page-sender {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ---------- Card ---------- */
@@ -783,7 +777,7 @@ input { font-family: inherit; font-size: inherit; }
   justify-content: center;
   position: relative;
   overflow: hidden;
-  min-height: 360px;
+  min-height: 240px;
 }
 
 .video-stage video {
@@ -797,6 +791,57 @@ input { font-family: inherit; font-size: inherit; }
   display: block;
   position: relative;
   z-index: 1;
+}
+
+.video-stage .video-info {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: white;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+/* When a cast is live, hide the discovery UI and make the video stage
+   fill the whole viewport so the casted screen is the focus. */
+body.is-live .sender-discovery,
+body.is-live #myNetCard,
+body.is-live #codeConfirmCard,
+body.is-live .page-receiver > .card:first-of-type,
+body.is-live .topbar { display: none !important; }
+
+body.is-live {
+  background: #000;
+}
+
+body.is-live .page-receiver {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 100%;
+  padding: 0;
+}
+
+body.is-live .video-stage {
+  flex: 1;
+  min-height: 100vh;
+  border: none;
+  border-radius: 0;
+}
+
+/* When live, make stage-controls always visible (don't fade in on hover) */
+body.is-live .stage-controls {
+  opacity: 1 !important;
+}
+
+/* When live, hide the "Live" overlay dot/text — the diagnostic badge covers it */
+body.is-live .stage-overlay {
+  display: none !important;
 }
 
 .video-stage .stage-empty {
@@ -1189,14 +1234,14 @@ input { font-family: inherit; font-size: inherit; }
 /* ============================================================
    RESPONSIVE — mobile first, scaling up
    Breakpoints:
-     ≤ 480px  — phones (single column, bottom-sheet modal)
-     481–800px — large phones / small tablets
-     801–1200px — tablets / small laptops
-     > 1200px — desktops (current default)
+     < 600px    — phones (single column, bottom-sheet modal, full-width)
+     600–960px  — large phones / small tablets (single column, more spacing)
+     961–1200px — tablets / small laptops (2 columns on sender)
+     > 1200px   — desktops (default)
    ============================================================ */
 
-/* ---------- Phones ---------- */
-@media (max-width: 480px) {
+/* ---------- Small phones ---------- */
+@media (max-width: 599px) {
   :root {
     --space-4: 14px;
     --space-5: 18px;
@@ -1205,51 +1250,67 @@ input { font-family: inherit; font-size: inherit; }
 
   html, body { font-size: 15px; }
 
+  /* Top bar: tighter, hide subtitle, shrink banner */
   .topbar {
     padding: var(--space-3) var(--space-4);
-    gap: var(--space-3);
+    gap: var(--space-2);
+    flex-wrap: nowrap;
   }
 
-  .brand span:not(.brand-mark + *) { font-size: 15px; }
-  .brand > span:last-child { display: none; } /* hide the "Sender"/"Receiver" subtitle on phones */
+  .brand { font-size: 15px; gap: var(--space-2); }
+  .brand-mark { width: 24px; height: 24px; }
+  .brand > span:last-child { display: none; } /* hide "Sender"/"Receiver" subtitle on phones */
 
   .ssid-banner {
-    padding: 6px 10px;
+    padding: 5px 10px;
     font-size: 11.5px;
-    max-width: 50%;
+    max-width: 55%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .ssid-banner strong { font-size: 11.5px; }
 
+  /* Pages: tighter padding, smaller gap */
   .page-sender, .page-receiver {
     padding: var(--space-3);
     gap: var(--space-3);
   }
 
+  /* Cards: smaller padding, smaller radius */
   .card {
     padding: var(--space-4);
     border-radius: var(--radius);
     gap: var(--space-3);
   }
 
-  .page-sender {
-    grid-template-columns: 1fr;
+  /* Form controls: 44px min tap target (Apple HIG), bigger text */
+  .field .input {
+    font-size: 15px;
+    padding: 12px 14px;
+    min-height: 44px;
   }
+  .field label { font-size: 12.5px; }
 
-  .capture-options { gap: var(--space-3); }
   .capture-options select.input { font-size: 15px; padding: 12px 14px; }
   .checkbox { font-size: 13px; padding: 8px 0; min-height: 44px; }
+  .checkbox input { width: 18px; height: 18px; }
 
+  /* Buttons: bigger, full-width blocks */
+  .btn { min-height: 44px; padding: 12px 16px; font-size: 14px; }
+  .btn--lg { padding: 14px 18px; font-size: 15px; }
+  .btn--sm { padding: 10px 12px; font-size: 12.5px; }
+
+  /* Sender capture card */
   .preview-wrap { aspect-ratio: 16 / 10; }
   .preview-actions { flex-direction: column; gap: var(--space-2); }
   .preview-actions .btn { width: 100%; }
-  .btn--lg { padding: 14px 18px; font-size: 15px; }
 
+  /* Tabs: bigger touch targets */
   .tabs { padding: 3px; }
   .tab { padding: 10px 12px; font-size: 12.5px; min-height: 44px; }
 
+  /* Devices list (sender side) */
   .device-item {
     grid-template-columns: 22px 1fr auto;
     padding: 12px 14px;
@@ -1259,15 +1320,26 @@ input { font-family: inherit; font-size: inherit; }
   .device-item input[type="checkbox"] { width: 22px; height: 22px; }
   .device-item .status { min-width: 0; padding: 4px 8px; font-size: 11.5px; }
 
+  /* Senders list (receiver side) */
+  .sender-item {
+    grid-template-columns: 40px 1fr auto;
+    padding: 12px 14px;
+    min-height: 64px;
+    gap: var(--space-3);
+  }
+  .sender-icon { width: 36px; height: 36px; }
+  .sender-icon svg { width: 20px; height: 20px; }
+  .sender-item .btn { min-width: 84px; padding: 8px 14px; }
+
+  /* Empty states */
   .empty-state { padding: var(--space-5) var(--space-3); }
 
+  /* Code/QR panel */
   .qr-wrap img { width: min(70vw, 220px); height: auto; aspect-ratio: 1; }
   .code-value { font-size: 28px; letter-spacing: 4px; }
   .code-input-row .input { font-size: 18px; letter-spacing: 1.5px; }
 
-  .field .input { font-size: 15px; padding: 12px 14px; min-height: 44px; }
-
-  /* Receiver: identity row stacks */
+  /* Receiver: identity row stacks (input + code join side by side → vertical) */
   .page-receiver > .card:first-of-type {
     flex-direction: column;
     align-items: stretch;
@@ -1277,17 +1349,37 @@ input { font-family: inherit; font-size: inherit; }
   .page-receiver > .card:first-of-type .field > div { flex-direction: column; }
   .page-receiver > .card:first-of-type #codeJoinInput { font-size: 18px; }
 
-  /* Video stage fills viewport on phone */
+  /* My-network card: smaller icon, wrap meta inline */
+  .my-net-icon { width: 40px; height: 40px; }
+  .my-net-icon svg { width: 20px; height: 20px; }
+  .my-net-row { gap: var(--space-2); }
+  .my-net-label { font-size: 14px; }
+
+  /* Code-confirm card: wrap actions to second row, full-width buttons */
+  .code-confirm { flex-wrap: wrap; }
+  .code-confirm-actions { width: 100%; }
+  .code-confirm-actions .btn { flex: 1; min-height: 44px; }
+
+  /* Video stage: takes remaining height, no fixed min */
   .video-stage {
     min-height: 0;
     aspect-ratio: auto;
     flex: 1 1 auto;
+    border-radius: var(--radius);
   }
+  .video-stage video { min-height: 0; }
 
-  /* Modal becomes a bottom sheet */
-  .modal-backdrop {
-    align-items: flex-end;
-  }
+  /* Stage-empty: smaller text, less padding */
+  .video-stage .stage-empty { padding: var(--space-5) var(--space-3); }
+  .video-stage .stage-empty svg { width: 36px; height: 36px; }
+  .video-stage .stage-empty h3 { font-size: 15px; }
+  .video-stage .stage-empty p { font-size: 12.5px; }
+
+  /* Stage controls always visible on touch */
+  .video-stage .stage-controls { opacity: 1; bottom: var(--space-3); right: var(--space-3); }
+
+  /* Modal: bottom sheet */
+  .modal-backdrop { align-items: flex-end; }
   .modal {
     max-width: 100%;
     width: 100%;
@@ -1321,12 +1413,14 @@ input { font-family: inherit; font-size: inherit; }
   .modal .modal-countdown { font-size: 12px; }
   .modal .modal-countdown .ring { width: 32px; height: 32px; }
 
-  /* Landing role cards stack */
+  /* Landing */
+  .landing { padding: var(--space-4); }
   .landing .role-grid { grid-template-columns: 1fr; }
   .landing-card { padding: var(--space-5) var(--space-4); }
   .landing h1 { font-size: 22px; }
   .landing .role-card { padding: var(--space-4); }
 
+  /* Toast: full-width, respects safe area */
   .toast-stack {
     left: var(--space-3);
     right: var(--space-3);
@@ -1334,9 +1428,6 @@ input { font-family: inherit; font-size: inherit; }
     bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   }
   .toast { max-width: 100%; }
-
-  /* Video stage controls always visible on touch */
-  .video-stage .stage-controls { opacity: 1; bottom: var(--space-3); right: var(--space-3); }
 }
 
 @keyframes slide-up-sheet {
@@ -1345,30 +1436,46 @@ input { font-family: inherit; font-size: inherit; }
 }
 
 /* ---------- Large phones / small tablets ---------- */
-@media (min-width: 481px) and (max-width: 800px) {
+@media (min-width: 600px) and (max-width: 960px) {
   .page-sender, .page-receiver {
     padding: var(--space-4);
+    gap: var(--space-4);
   }
-  .page-sender {
-    grid-template-columns: 1fr;
+
+  .page-sender { /* still single column at this size */
+    flex-direction: column;
   }
+
   .page-receiver > .card:first-of-type {
     flex-direction: column;
     align-items: stretch;
   }
   .page-receiver > .card:first-of-type .field { min-width: 0 !important; }
-  .video-stage { min-height: 380px; }
-  .modal { max-width: 460px; }
+
+  .video-stage { min-height: 360px; }
+  .modal { max-width: 480px; }
   .modal-actions { flex-direction: row; }
 }
 
 /* ---------- Tablets / small laptops ---------- */
-@media (min-width: 801px) and (max-width: 1200px) {
-  .page-sender { grid-template-columns: 360px 1fr; }
+@media (min-width: 961px) {
+  .page-sender {
+    padding: var(--space-5);
+    display: grid;
+    grid-template-columns: minmax(360px, 420px) 1fr;
+    gap: var(--space-5);
+  }
+
+  .page-receiver {
+    padding: var(--space-5);
+    gap: var(--space-5);
+  }
+
   .video-stage { min-height: 420px; }
+  .modal { max-width: 480px; }
 }
 
-/* ---------- Desktops (default) ---------- */
+/* ---------- Desktops ---------- */
 @media (min-width: 1201px) {
   .video-stage { min-height: 480px; }
 }

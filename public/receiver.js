@@ -460,12 +460,14 @@ function deny() {
 // --- Stage ---
 function showStage() {
   stageEmpty.style.display = 'none';
-  remoteVideo.style.display = 'block';
+  // remoteVideo stays in the DOM with display:block (CSS) so the browser's
+  // autoplay policy is satisfied as soon as srcObject is set.
   muteBtn.style.display = 'inline-flex';
   fullscreenBtn.style.display = 'inline-flex';
   disconnectBtn.style.display = 'inline-flex';
   stageOverlay.style.display = 'flex';
   stageOverlayText.textContent = 'Live';
+  document.body.classList.add('is-live');
 }
 
 function showStageOverlay(text) {
@@ -483,12 +485,15 @@ function hideStage() {
     <h3>Disconnected</h3>
     <p>The sender stopped sharing, or the connection was lost.</p>
   `;
-  remoteVideo.style.display = 'none';
   remoteVideo.srcObject = null;
+  // Hide the live diagnostic info badge
+  const info = document.querySelector('#videoInfo');
+  if (info) info.style.display = 'none';
   muteBtn.style.display = 'none';
   fullscreenBtn.style.display = 'none';
   disconnectBtn.style.display = 'none';
   stageOverlay.style.display = 'none';
+  document.body.classList.remove('is-live');
 }
 
 function disconnect() {
@@ -505,6 +510,21 @@ function disconnect() {
 function openRoomConnection(room) {
   if (!state.activePair) return;
   const pc = createPeerConnection((candidate) => state.activePair.ws?.send(JSON.stringify({ type: 'ice-candidate', candidate })));
+
+  // Buffer ICE candidates that arrive before the remote description is set.
+  // Without this, the receiver's addIceCandidate() throws "Cannot add ICE
+  // candidate without a remote description" and the connection fails.
+  const pendingIceCandidates = [];
+  let remoteDescriptionSet = false;
+  const flushPendingIce = async () => {
+    while (pendingIceCandidates.length > 0) {
+      const cand = pendingIceCandidates.shift();
+      try { await pc.addIceCandidate(cand); } catch (e) {
+        console.warn('[webrtc] buffered ICE candidate add failed:', e.message);
+      }
+    }
+  };
+
   // Pre-create recvonly transceivers. This makes the SDP negotiation
   // deterministic on the receiver side — the answer will have explicit
   // recvonly m-lines regardless of what the offer looks like.
@@ -517,7 +537,7 @@ function openRoomConnection(room) {
     console.warn('[webrtc] addTransceiver failed, falling back:', e.message);
   }
   pc.ontrack = (event) => {
-    console.log('[webrtc] receiver ontrack fired, kind:', event.track.kind, 'streams:', event.streams.length);
+    console.log('[webrtc] receiver ontrack fired, kind:', event.track.kind, 'streams:', event.streams.length, 'track state:', event.track.readyState);
     // Use the associated stream if present, otherwise build one from the track.
     // Some browsers fire ontrack with empty event.streams when transceivers are
     // created without an explicit addTrack(stream).
@@ -544,6 +564,7 @@ function openRoomConnection(room) {
     }
     showStage();
     toast(`Streaming from ${state.activePair?.senderName || 'sender'}`, 'success');
+    updateVideoInfo(stream);
   };
   pc.addEventListener('connectionstatechange', () => {
     console.log('[webrtc] receiver connection state:', pc.connectionState);
@@ -566,13 +587,24 @@ function openRoomConnection(room) {
         if (message.type === 'offer') {
           console.log('[webrtc] receiver got offer, creating answer');
           await pc.setRemoteDescription({ type: 'offer', sdp: message.sdp });
+          remoteDescriptionSet = true;
+          flushPendingIce();
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           ws.send({ type: 'answer', sdp: answer.sdp });
           console.log('[webrtc] receiver sent answer');
         } else if (message.type === 'ice-candidate') {
-          if (message.candidate) await pc.addIceCandidate(message.candidate);
-          else console.log('[webrtc] receiver: end-of-candidates');
+          if (message.candidate) {
+            if (remoteDescriptionSet) {
+              await pc.addIceCandidate(message.candidate);
+            } else {
+              // Buffer until the remote description is set
+              console.log('[webrtc] buffering ICE candidate (no remote desc yet)');
+              pendingIceCandidates.push(message.candidate);
+            }
+          } else {
+            console.log('[webrtc] receiver: end-of-candidates');
+          }
         }
       } catch (error) {
         console.error('[webrtc] receiver signal error:', error);
@@ -588,7 +620,40 @@ function openRoomConnection(room) {
   state.activePair.room = room;
 }
 
-fullscreenBtn.addEventListener('click', () => remoteVideo.requestFullscreen?.());
+// Visible video diagnostic — shows track info, resolution, framerate
+// right on the receiver page so the user can see what's happening without
+// opening DevTools.
+function updateVideoInfo(stream) {
+  const info = document.querySelector('#videoInfo');
+  if (!info) return;
+  const videoTrack = stream.getVideoTracks()[0];
+  const audioTrack = stream.getAudioTracks()[0];
+  const settings = videoTrack?.getSettings() || {};
+  info.innerHTML = `
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--text-dim);">
+      <span><strong style="color: var(--success);">● Live</strong></span>
+      ${videoTrack ? `<span>${settings.width || '?'}×${settings.height || '?'} @ ${settings.frameRate || '?'}fps</span>` : ''}
+      ${audioTrack ? '<span>🔊 audio</span>' : '<span>🔇 no audio</span>'}
+      <span>${videoTrack?.label || 'video track'}</span>
+    </div>
+  `;
+  info.style.display = 'block';
+}
+
+fullscreenBtn.addEventListener('click', () => {
+  // Prefer the video-stage so the controls + video info stay visible
+  // in fullscreen. Fall back to the video element.
+  const target = document.querySelector('#stage');
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.();
+  } else {
+    target?.requestFullscreen?.() || remoteVideo.requestFullscreen?.();
+  }
+});
+// Sync fullscreen button label with actual fullscreen state
+document.addEventListener('fullscreenchange', () => {
+  if (fullscreenBtn) fullscreenBtn.textContent = document.fullscreenElement ? '⛌ Exit' : 'Fullscreen';
+});
 disconnectBtn.addEventListener('click', disconnect);
 muteBtn.addEventListener('click', () => {
   remoteVideo.muted = !remoteVideo.muted;
