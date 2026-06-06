@@ -18,6 +18,7 @@ const stageOverlayText = document.querySelector('#stageOverlayText');
 const remoteVideo = document.querySelector('#remoteVideo');
 const fullscreenBtn = document.querySelector('#fullscreenBtn');
 const disconnectBtn = document.querySelector('#disconnectBtn');
+const muteBtn = document.querySelector('#muteBtn');
 const modalMount = document.querySelector('#modalMount');
 const toastStack = document.querySelector('#toastStack');
 const presenceStatus = document.querySelector('#presenceStatus');
@@ -460,6 +461,7 @@ function deny() {
 function showStage() {
   stageEmpty.style.display = 'none';
   remoteVideo.style.display = 'block';
+  muteBtn.style.display = 'inline-flex';
   fullscreenBtn.style.display = 'inline-flex';
   disconnectBtn.style.display = 'inline-flex';
   stageOverlay.style.display = 'flex';
@@ -483,6 +485,7 @@ function hideStage() {
   `;
   remoteVideo.style.display = 'none';
   remoteVideo.srcObject = null;
+  muteBtn.style.display = 'none';
   fullscreenBtn.style.display = 'none';
   disconnectBtn.style.display = 'none';
   stageOverlay.style.display = 'none';
@@ -526,7 +529,10 @@ function openRoomConnection(room) {
       return;
     }
     remoteVideo.srcObject = stream;
-    remoteVideo.muted = false;
+    // Start muted to satisfy autoplay policy. The user can unmute with the
+    // audio button. (Without this, Chrome refuses to play() and the video
+    // element shows a buffering spinner forever.)
+    remoteVideo.muted = true;
     remoteVideo.autoplay = true;
     remoteVideo.playsInline = true;
     const playPromise = remoteVideo.play();
@@ -584,6 +590,11 @@ function openRoomConnection(room) {
 
 fullscreenBtn.addEventListener('click', () => remoteVideo.requestFullscreen?.());
 disconnectBtn.addEventListener('click', disconnect);
+muteBtn.addEventListener('click', () => {
+  remoteVideo.muted = !remoteVideo.muted;
+  muteBtn.textContent = remoteVideo.muted ? '🔇' : '🔊';
+  muteBtn.setAttribute('aria-label', remoteVideo.muted ? 'Unmute audio' : 'Mute audio');
+});
 
 function toast(text, kind = 'info') {
   const el = document.createElement('div');
