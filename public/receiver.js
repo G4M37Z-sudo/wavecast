@@ -502,14 +502,33 @@ function disconnect() {
 function openRoomConnection(room) {
   if (!state.activePair) return;
   const pc = createPeerConnection((candidate) => state.activePair.ws?.send(JSON.stringify({ type: 'ice-candidate', candidate })));
+  // Pre-create recvonly transceivers. This makes the SDP negotiation
+  // deterministic on the receiver side — the answer will have explicit
+  // recvonly m-lines regardless of what the offer looks like.
+  try {
+    pc.addTransceiver('video', { direction: 'recvonly' });
+    pc.addTransceiver('audio', { direction: 'recvonly' });
+  } catch (e) {
+    // Older browsers: fall through and rely on implicit transceivers from
+    // setRemoteDescription.
+    console.warn('[webrtc] addTransceiver failed, falling back:', e.message);
+  }
   pc.ontrack = (event) => {
+    console.log('[webrtc] receiver ontrack fired, kind:', event.track.kind, 'streams:', event.streams.length);
     // Use the associated stream if present, otherwise build one from the track.
     // Some browsers fire ontrack with empty event.streams when transceivers are
     // created without an explicit addTrack(stream).
     const stream = event.streams[0] || new MediaStream([event.track]);
+    // If we already have a srcObject, merge the new track in.
+    if (remoteVideo.srcObject && remoteVideo.srcObject !== stream) {
+      const existing = remoteVideo.srcObject;
+      existing.addTrack(event.track);
+      return;
+    }
     remoteVideo.srcObject = stream;
     remoteVideo.muted = false;
     remoteVideo.autoplay = true;
+    remoteVideo.playsInline = true;
     const playPromise = remoteVideo.play();
     if (playPromise) {
       playPromise.catch((err) => {
@@ -522,7 +541,9 @@ function openRoomConnection(room) {
   };
   pc.addEventListener('connectionstatechange', () => {
     console.log('[webrtc] receiver connection state:', pc.connectionState);
-    if (pc.connectionState === 'failed') {
+    if (pc.connectionState === 'connected') {
+      console.log('[webrtc] receiver connected');
+    } else if (pc.connectionState === 'failed') {
       toast('WebRTC connection failed — both devices must be on the same network', 'danger');
     } else if (pc.connectionState === 'disconnected') {
       toast('Connection lost (will try to recover)', 'warning');
@@ -537,14 +558,20 @@ function openRoomConnection(room) {
     onSignal: async (message) => {
       try {
         if (message.type === 'offer') {
+          console.log('[webrtc] receiver got offer, creating answer');
           await pc.setRemoteDescription({ type: 'offer', sdp: message.sdp });
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           ws.send({ type: 'answer', sdp: answer.sdp });
+          console.log('[webrtc] receiver sent answer');
         } else if (message.type === 'ice-candidate') {
           if (message.candidate) await pc.addIceCandidate(message.candidate);
+          else console.log('[webrtc] receiver: end-of-candidates');
         }
-      } catch (error) { toast(`WebRTC error: ${error.message}`, 'danger'); }
+      } catch (error) {
+        console.error('[webrtc] receiver signal error:', error);
+        toast(`WebRTC error: ${error.message}`, 'danger');
+      }
     },
     onPeerReady: () => { console.log('[ws] receiver peer-ready in room', room); },
     onPeerLeft: () => { disconnect(); toast('Sender disconnected', 'warning'); },

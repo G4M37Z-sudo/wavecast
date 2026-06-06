@@ -464,7 +464,23 @@ function enterWaitingMode(room) {
 // --- WebRTC per-pairing lifecycle ---
 function startWebRtcForPair(peerId, room, pairing) {
   const pc = createPeerConnection((candidate) => pairing.ws?.send(JSON.stringify({ type: 'ice-candidate', candidate })));
-  addSenderTracks(pc, state.senderStream);
+  // Use addTransceiver with explicit sendonly direction. This makes the SDP
+  // unambiguous regardless of whether the browser respects offerToReceive
+  // flags on createOffer. With addTrack + createOffer(offerToReceiveVideo:false)
+  // some browsers leave the transceiver direction as 'sendrecv' which can
+  // leave the receiver in a buffering state.
+  const videoTracks = state.senderStream.getVideoTracks();
+  const audioTracks = state.senderStream.getAudioTracks();
+  if (videoTracks.length === 0) {
+    toast('No video track in the capture stream — pick a screen/window/tab', 'danger');
+    return;
+  }
+  for (const track of videoTracks) {
+    pc.addTransceiver(track, { direction: 'sendonly', streams: [state.senderStream] });
+  }
+  for (const track of audioTracks) {
+    pc.addTransceiver(track, { direction: 'sendonly', streams: [state.senderStream] });
+  }
   pairing.room = room;
 
   const ws = connectRoom({
@@ -472,18 +488,26 @@ function startWebRtcForPair(peerId, room, pairing) {
     role: 'sender',
     onPeerReady: async () => {
       try {
-        const offer = await pc.createOffer({ offerToReceiveVideo: false, offerToReceiveAudio: false });
+        const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        console.log('[webrtc] sender offer created, sending to receiver');
         ws.send({ type: 'offer', sdp: offer.sdp });
       } catch (error) {
+        console.error('[webrtc] sender offer failed:', error);
         toast(`WebRTC error: ${error.message}`, 'danger');
       }
     },
     onSignal: async (message) => {
       try {
-        if (message.type === 'answer') await pc.setRemoteDescription({ type: 'answer', sdp: message.sdp });
-        else if (message.type === 'ice-candidate') {
-          if (message.candidate) await pc.addIceCandidate(message.candidate);
+        if (message.type === 'answer') {
+          await pc.setRemoteDescription({ type: 'answer', sdp: message.sdp });
+          console.log('[webrtc] sender applied answer');
+        } else if (message.type === 'ice-candidate') {
+          if (message.candidate) {
+            await pc.addIceCandidate(message.candidate);
+          } else {
+            console.log('[webrtc] sender: end-of-candidates from receiver');
+          }
         }
       } catch (error) { toast(`Signaling error: ${error.message}`, 'danger'); }
     },
@@ -506,12 +530,21 @@ function startWebRtcForPair(peerId, room, pairing) {
   pairing.ws = ws;
 
   pc.addEventListener('connectionstatechange', () => {
-    if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
+    console.log('[webrtc] sender connection state:', pc.connectionState);
+    if (pc.connectionState === 'connected') {
+      toast('Cast is live', 'success');
+    } else if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
       teardownPairing(peerId);
       const r = state.receivers.get(peerId);
       if (r) r.status = 'idle';
       renderDevices();
+      if (pc.connectionState === 'failed') {
+        toast('WebRTC failed — check both devices are on the same network', 'danger');
+      }
     }
+  });
+  pc.addEventListener('iceconnectionstatechange', () => {
+    console.log('[webrtc] sender ICE state:', pc.iceConnectionState);
   });
 }
 
