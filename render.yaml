@@ -5,12 +5,13 @@
 #
 # Docs: https://render.com/docs/blueprint-specification
 #
-# Service names on Render are globally unique. Rename if "wavecast-g4m37z"
-# is also taken (Render will show a clear error if so).
+# Service names on Render are globally unique. If "wavecast-g4m37z-2026"
+# is also taken (very unlikely — it's a random string), pick a new name
+# with a longer random suffix and update this file.
 
 services:
   - type: web
-    name: wavecast-g4m37z
+    name: wavecast-g4m37z-2026
     runtime: node
     plan: free
     branch: main
