@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher foreground: a 28dp white circle centered in the 108dp
+  safe area (so it doesn't get clipped by adaptive icon masks).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#ffffff"
+        android:fillAlpha="0.95"
+        android:pathData="M54,40 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+</vector>

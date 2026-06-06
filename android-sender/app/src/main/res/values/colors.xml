@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Colors used across the app. The dark theme uses these directly;
+  a light theme would override them.
+-->
+<resources>
+    <color name="bg">#0a0e1a</color>
+    <color name="surface">#131a2b</color>
+    <color name="surface_2">#1a2238</color>
+    <color name="border">#2a3550</color>
+    <color name="text">#f1f5f9</color>
+    <color name="text_muted">#94a3b8</color>
+    <color name="accent">#6366f1</color>
+    <color name="accent_2">#5b8dff</color>
+    <color name="success">#10b981</color>
+    <color name="danger">#ef4444</color>
+</resources>

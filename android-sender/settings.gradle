@@ -1,0 +1,28 @@
+// settings.gradle — declares the included modules.
+// For an Android app, this is just ':app'.
+
+include ':app'
+
+// Use the Google Maven repository to find the Android Gradle Plugin.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    // FAIL_ON_PROJECT_REPOS = forbid subprojects from declaring their own repos.
+    // This is the modern Gradle best practice.
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        // The stream-io/webrtc-android library is published on Maven Central,
+        // so the two repositories above are sufficient.
+    }
+}
+
+// Make the Android root project name available to the IDE.
+rootProject.name = "WaveCast Sender"

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AndroidManifest for WaveCast Sender.
+
+  The interesting bits:
+  - BIND_ACCESSIBILITY_SERVICE is required by some MediaProjection
+    implementations to work on certain OEM skins (Xiaomi, Huawei). We
+    deliberately don't declare it — we use the system MediaProjection
+    dialog, not an accessibility service, so we don't need that
+    permission.
+  - FOREGROUND_SERVICE + FOREGROUND_SERVICE_MEDIA_PROJECTION: the screen
+    capture has to run as a foreground service so Android doesn't kill
+    it when the app goes to the background.
+  - POST_NOTIFICATIONS: Android 13+ requires this to show the
+    "WaveCast is casting" notification.
+  - INTERNET: for WebSocket signaling and STUN.
+  - We do NOT need CAMERA permission because we're capturing the screen,
+    not the camera. ScreenCaptureIntent comes through the system, not
+    a runtime permission.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.WaveCast"
+        android:usesCleartextTraffic="false"
+        tools:targetApi="34"
+        xmlns:tools="http://schemas.android.com/tools">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The casting service. Runs as a foreground service while the
+             user is sharing their screen. -->
+        <service
+            android:name=".CastService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+    </application>
+</manifest>

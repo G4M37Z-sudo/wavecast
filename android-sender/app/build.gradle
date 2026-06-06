@@ -1,0 +1,93 @@
+// app/build.gradle — the actual Android app module.
+// This declares the application id, min/target SDK, dependencies, and signing.
+
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.g4m37z.wavecast'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.g4m37z.wavecast"
+        // Android 7.0 (Nougat) is the minimum. Covers ~95% of active devices
+        // and gives us all the MediaProjection improvements we need.
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "0.1.0"
+    }
+
+    buildTypes {
+        debug {
+            // Debug builds are auto-signed with the Android debug keystore.
+            // Good for testing on your own device and for sideloading to
+            // friends. Not valid for Play Store publishing.
+            minifyEnabled false
+        }
+        release {
+            // For release builds, configure your own keystore.
+            // See android-sender/RELEASE_SIGNING.md for setup.
+            minifyEnabled false
+            // Use debug signing as a placeholder so the project builds
+            // out of the box. Replace with a real keystore before
+            // publishing to the Play Store.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        // JVM 17 is required by Android Gradle Plugin 8.x.
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    packaging {
+        // The stream-io/webrtc-android library bundles a few native libraries
+        // (libjingle_peerconnection.so, etc.) that we need to keep unpacked.
+        // Otherwise the APK will fail to load them on older devices.
+        jniLibs {
+            useLegacyPackaging false
+        }
+    }
+}
+
+dependencies {
+    // AndroidX core
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-service:2.8.4'
+    implementation 'androidx.activity:activity-ktx:1.9.1'
+
+    // Coroutines for async work (signaling, ICE candidate handling, etc.)
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+
+    // OkHttp for HTTP calls (QR code generation, /api/pairing/reserve, etc.)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // WebRTC — this is the core of the app. The stream-io/webrtc-android
+    // library is a maintained Kotlin/Java binding to Google's libwebrtc.
+    // It includes:
+    //   - PeerConnection, PeerConnectionFactory
+    //   - VideoCapturer (we'll use ScreenCapturerAndroid for MediaProjection)
+    //   - Hardware H.264 encoder via MediaCodec
+    //   - ICE, STUN, all the standard WebRTC plumbing
+    implementation 'io.github.webrtc-sdk:android:124.6422.06'
+
+    // JSON (built into Android, but explicit for clarity)
+    implementation 'org.json:json:20240303'
+}

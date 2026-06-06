@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Theme.WaveCast — a dark, streamer-friendly Material 3 theme that
+  matches the web UI's deep navy / indigo palette.
+-->
+<resources>
+    <style name="Theme.WaveCast" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#6366f1</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="colorPrimaryContainer">#4f46e5</item>
+        <item name="colorOnPrimaryContainer">#ffffff</item>
+        <item name="colorSecondary">#10b981</item>
+        <item name="colorOnSecondary">#ffffff</item>
+        <item name="colorSurface">#0a0e1a</item>
+        <item name="colorOnSurface">#f1f5f9</item>
+        <item name="colorSurfaceVariant">#131a2b</item>
+        <item name="colorOnSurfaceVariant">#94a3b8</item>
+        <item name="colorOutline">#2a3550</item>
+        <item name="android:colorBackground">#0a0e1a</item>
+        <item name="android:statusBarColor">#0a0e1a</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
