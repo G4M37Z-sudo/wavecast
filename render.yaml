@@ -1,0 +1,20 @@
+# Render Blueprint
+# Deploys WaveCast as a single Web Service with WebSocket support.
+# After merging to main on GitHub, connect this repo to Render and it
+# will pick up this file automatically.
+#
+# Docs: https://render.com/docs/blueprint-specification
+
+services:
+  - type: web
+    name: wavecast
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/senders
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+    autoDeploy: true
