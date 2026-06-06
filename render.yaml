@@ -4,10 +4,13 @@
 # will pick up this file automatically.
 #
 # Docs: https://render.com/docs/blueprint-specification
+#
+# Service names on Render are globally unique. Rename if "wavecast-g4m37z"
+# is also taken (Render will show a clear error if so).
 
 services:
   - type: web
-    name: wavecast
+    name: wavecast-g4m37z
     runtime: node
     plan: free
     branch: main
