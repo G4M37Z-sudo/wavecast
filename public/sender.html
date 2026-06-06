@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>WaveCast — Sender</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span>WaveCast</span>
+        <span style="color: var(--text-dim); font-weight: 500; margin-left: var(--space-2);">Sender</span>
+      </div>
+      <div id="ssidBanner" class="ssid-banner" aria-live="polite">
+        <span class="dot"></span>
+        <span>Detecting network…</span>
+      </div>
+    </header>
+
+    <main class="page page-sender">
+      <!-- Identity + Capture column -->
+      <section class="card" aria-label="Your screen">
+        <h2>Your screen</h2>
+        <p class="section-hint">Capture once. Cast to as many devices on this network as you like.</p>
+
+        <div class="field">
+          <label for="senderName">Your name</label>
+          <input id="senderName" class="input" placeholder="e.g. My PC" maxlength="24" value="My PC" />
+        </div>
+
+        <div class="capture-options">
+          <div class="field">
+            <label for="resolutionSelect">Resolution</label>
+            <select id="resolutionSelect" class="input">
+              <option value="auto" selected>Auto (let receiver pick)</option>
+              <option value="original">Original (sender screen, 60fps)</option>
+              <option value="1080p">1080p (1920×1080, 30fps)</option>
+              <option value="720p">720p (1280×720, 30fps)</option>
+              <option value="480p">480p (854×480, 24fps)</option>
+            </select>
+          </div>
+          <label class="checkbox">
+            <input id="includeAudio" type="checkbox" />
+            Include system/tab audio (if available)
+          </label>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+          <div class="placeholder" id="previewPlaceholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span>Click <strong>Start sharing</strong> to pick a screen</span>
+          </div>
+          <video id="localPreview" autoplay muted playsinline style="display: none;"></video>
+          <div class="preview-meta" id="previewMeta" style="display: none;"></div>
+        </div>
+
+        <div class="preview-actions">
+          <button id="startShare" class="btn btn--primary btn--block btn--lg">Start sharing</button>
+          <button id="stopShare" class="btn btn--danger btn--block" disabled>Stop sharing</button>
+        </div>
+      </section>
+
+      <!-- Devices column with tab bar -->
+      <section class="card" aria-label="Connect to receivers">
+        <div class="tabs" role="tablist">
+          <button class="tab tab--active" data-tab="devices" role="tab" aria-selected="true">Nearby devices</button>
+          <button class="tab" data-tab="code" role="tab" aria-selected="false">Code or QR</button>
+        </div>
+
+        <!-- Devices panel -->
+        <div class="tab-panel" data-panel="devices" role="tabpanel">
+          <h2>Devices on this network <span class="count" id="deviceCount">0</span></h2>
+          <p class="section-hint" id="devicesHint">Looking for receivers…</p>
+
+          <ul class="devices-list" id="devicesList" aria-live="polite">
+            <li class="empty-state">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="13" rx="2"/>
+                <path d="M8 21h8M12 17v4"/>
+              </svg>
+              <div>No receivers found yet</div>
+              <div class="hint">Open <code>/receiver</code> on the device you want to cast to.</div>
+            </li>
+          </ul>
+
+          <div style="display: flex; gap: var(--space-2);">
+            <button id="castSelected" class="btn btn--primary btn--block" disabled>Cast to selected</button>
+          </div>
+
+          <div id="globalStatus" class="status-banner status-banner--info" style="display: none;"></div>
+        </div>
+
+        <!-- Code/QR panel -->
+        <div class="tab-panel" data-panel="code" role="tabpanel" hidden>
+          <h2>Pair with a code or QR</h2>
+          <p class="section-hint">Generate a code, then have the receiver type it in or scan the QR.</p>
+
+          <div class="qr-wrap" id="qrWrap" style="display: none;">
+            <img id="qrImage" alt="Receiver pairing QR code" />
+          </div>
+
+          <div class="code-display" id="codeDisplay" style="display: none;">
+            <div class="code-label">Room code</div>
+            <div class="code-value" id="codeValue"></div>
+          </div>
+
+          <div class="code-input-row">
+            <input id="codeInput" class="input" placeholder="Or type a code from the receiver" maxlength="16" />
+          </div>
+
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+            <button id="generateCode" class="btn btn--primary btn--block">Generate new code / QR</button>
+            <button id="castWithCode" class="btn btn--ghost btn--block" disabled>Cast with this code</button>
+          </div>
+
+          <div id="codeStatus" class="status-banner status-banner--info" style="display: none;"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    <script type="module" src="/sender.js"></script>
+  </body>
+</html>

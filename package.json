@@ -1,0 +1,16 @@
+{
+  "name": "wavecast-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Wi-Fi browser-based screen casting MVP using WebRTC and WebSocket signaling.",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.3"
+  }
+}

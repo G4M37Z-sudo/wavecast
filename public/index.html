@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>WaveCast</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span>WaveCast</span>
+      </div>
+      <div id="ssidBanner" class="ssid-banner" aria-live="polite">
+        <span class="dot"></span>
+        <span>Detecting network…</span>
+      </div>
+    </header>
+
+    <main class="landing">
+      <div class="landing-card">
+        <h1>Cast your screen to any device on this Wi-Fi</h1>
+        <p>No cables, no cloud, no accounts. Pick a role to get started.</p>
+
+        <div class="role-grid">
+          <a class="role-card" href="/sender">
+            <div class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12h6l3-9 4 18 3-9h4"/>
+              </svg>
+            </div>
+            <h3>Cast from this device</h3>
+            <span>Share your screen to one or more receivers on the same network. Each receiver approves the cast before it starts.</span>
+          </a>
+          <a class="role-card" href="/receiver">
+            <div class="icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <path d="M8 21h8M12 17v4"/>
+              </svg>
+            </div>
+            <h3>Receive on this device</h3>
+            <span>Show up in nearby senders' device lists. Approve an incoming cast to start viewing.</span>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (async () => {
+        try {
+          const r = await fetch('/api/network');
+          const data = await r.json();
+          const banner = document.querySelector('#ssidBanner');
+          const isFallback = data.source === 'fallback';
+          banner.classList.toggle('fallback', isFallback);
+          banner.innerHTML = `<span class="dot"></span><span><strong style="color: var(--text);">${data.ssid}</strong>${isFallback ? ' (Wi-Fi not detected)' : ''}</span>`;
+        } catch {
+          document.querySelector('#ssidBanner').innerHTML = '<span class="dot"></span><span>Network unavailable</span>';
+        }
+      })();
+    </script>
+  </body>
+</html>

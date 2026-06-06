@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>WaveCast — Receiver</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span>WaveCast</span>
+        <span style="color: var(--text-dim); font-weight: 500; margin-left: var(--space-2);">Receiver</span>
+      </div>
+      <div id="ssidBanner" class="ssid-banner" aria-live="polite">
+        <span class="dot"></span>
+        <span>Detecting network…</span>
+      </div>
+    </header>
+
+    <main class="page page-receiver">
+      <section class="card" style="flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4);">
+        <div class="field" style="flex: 1; min-width: 220px;">
+          <label for="receiverName">This device's name</label>
+          <input id="receiverName" class="input" placeholder="e.g. Living Room TV" maxlength="24" value="Receiver" />
+        </div>
+        <div class="field" id="codeJoinRow" style="flex: 1; min-width: 220px;">
+          <label for="codeJoinInput">Or join with a code</label>
+          <div style="display: flex; gap: var(--space-2);">
+            <input id="codeJoinInput" class="input" placeholder="ABC123" maxlength="16" style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 2px; text-align: center;" />
+            <button id="codeJoinBtn" class="btn btn--primary btn--lg" disabled style="min-width: 110px;">Join</button>
+          </div>
+          <div id="codeJoinHint" class="hint" style="font-size: 12px; color: var(--text-dim); min-height: 16px;"></div>
+        </div>
+        <div id="presenceStatus" style="display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 13px;">
+          <span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success);"></span>
+          <span>Visible to senders on this network</span>
+        </div>
+      </section>
+
+      <section id="codeConfirmCard" class="card code-confirm" style="display: none;">
+        <div class="code-confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="13" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+          </svg>
+        </div>
+        <div class="code-confirm-info">
+          <div class="code-confirm-label">Found sender</div>
+          <div class="code-confirm-name" id="codeConfirmName">—</div>
+          <div class="code-confirm-sub" id="codeConfirmSub">Code: —</div>
+        </div>
+        <div class="code-confirm-actions">
+          <button class="btn btn--ghost" id="codeConfirmCancel">Cancel</button>
+          <button class="btn btn--primary btn--lg" id="codeConfirmConnect">Connect</button>
+        </div>
+      </section>
+
+      <section id="myNetCard" class="card my-net my-net--pending" aria-live="polite">
+        <div class="my-net-icon" id="myNetIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M9 9a3 3 0 1 1 4.2 2.75c-.7.4-1.2 1-1.2 1.75V15"/>
+            <circle cx="12" cy="18" r="0.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="my-net-info">
+          <div class="my-net-row">
+            <span class="my-net-label" id="myNetType">Network</span>
+            <span class="my-net-meta" id="myNetIp">—</span>
+            <span class="my-net-meta" id="myNetSubnet">—</span>
+          </div>
+          <div class="my-net-state" id="myNetState">Detecting your network…</div>
+        </div>
+      </section>
+
+      <section class="card sender-discovery">
+        <div class="sender-discovery-head">
+          <h2>Senders on this network <span id="senderCount" class="sender-count">0</span></h2>
+          <p class="hint">Pick a device to receive its screen. The other device will be asked to confirm.</p>
+        </div>
+        <ul id="sendersList" class="senders-list" aria-live="polite"></ul>
+      </section>
+
+      <div class="video-stage" id="stage">
+        <div class="stage-empty" id="stageEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="13" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+          </svg>
+          <h3>Waiting for a sender</h3>
+          <p>When someone on this network shares their screen to this device,<br>it will appear here automatically.</p>
+        </div>
+        <div class="stage-overlay" id="stageOverlay" style="display: none;">
+          <span class="dot"></span>
+          <span id="stageOverlayText">Live</span>
+        </div>
+        <div class="stage-controls">
+          <button id="fullscreenBtn" class="btn btn--sm btn--ghost" style="display: none;">Fullscreen</button>
+          <button id="disconnectBtn" class="btn btn--sm btn--danger" style="display: none;">Disconnect</button>
+        </div>
+        <video id="remoteVideo" autoplay playsinline style="display: none;"></video>
+      </div>
+    </main>
+
+    <!-- Modal mount point -->
+    <div id="modalMount"></div>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    <script type="module" src="/receiver.js"></script>
+  </body>
+</html>
