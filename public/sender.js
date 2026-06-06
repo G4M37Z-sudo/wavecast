@@ -286,8 +286,42 @@ function statusSubText(r) {
 }
 
 // --- Capture / share ---
+function canShareScreen() {
+  // navigator.mediaDevices.getDisplayMedia is the modern Web API for screen
+  // capture. It's only available in Chromium-based desktop browsers
+  // (Chrome/Edge/Brave) and Firefox. It is NOT available on:
+  //   - iOS Safari (all versions)
+  //   - Android Chrome / Firefox (mobile variants)
+  //   - Most smart TV browsers
+  // Phones can still act as receivers at /receiver.
+  return Boolean(
+    typeof navigator !== 'undefined' &&
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getDisplayMedia === 'function'
+  );
+}
+
+function isLikelyPhone() {
+  // Best-effort detection: no fine pointer + touch input => probably a phone
+  return (
+    window.matchMedia('(pointer: coarse) and (hover: none)').matches ||
+    /Android|iPhone|iPod/i.test(navigator.userAgent)
+  );
+}
+
 async function startCapture() {
   if (state.senderStream) stopCapture();
+  if (!canShareScreen()) {
+    const phone = isLikelyPhone();
+    toast(
+      phone
+        ? "Phones can't share their screen. Open /receiver on this device to receive a cast."
+        : "This browser doesn't support screen sharing. Try Chrome, Edge, or Firefox on a desktop.",
+      'warning',
+      6000
+    );
+    return;
+  }
   try {
     const constraints = buildCaptureConstraints({
       resolution: resolutionSelect.value,
@@ -701,4 +735,27 @@ castWithCodeButton.addEventListener('click', castWithCode);
   openPresence();
   renderDevices(ssid);
   setGlobalStatus('Ready. Click Start sharing to begin.', 'info');
+
+  // Detect phones/unsupported browsers and show a friendly hint up front
+  // (don't wait for the user to click "Start sharing" and see a confusing
+  // error). Phones can act as receivers; we steer them to /receiver.
+  if (!canShareScreen()) {
+    const phone = isLikelyPhone();
+    if (phone) {
+      setGlobalStatus(
+        '📱 Phones can\'t share their screen, but you can receive a cast on this device. ' +
+        'Open /receiver in this browser to start receiving.',
+        'warning'
+      );
+      startButton.textContent = 'Open receiver page';
+      startButton.addEventListener('click', () => { window.location.href = '/receiver'; }, { once: true });
+    } else {
+      setGlobalStatus(
+        '⚠ This browser doesn\'t support screen sharing. ' +
+        'Try Chrome, Edge, or Firefox on a desktop.',
+        'warning'
+      );
+      startButton.disabled = true;
+    }
+  }
 })();
